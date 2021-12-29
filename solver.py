@@ -14,6 +14,7 @@ class Tile:
     different tiles, similar to a directed graph
     """
     nbs = {"l": None, "r": None, "u": None, "d": None}
+    hand = None
     
     def __init__(self, letter, x=None, y=None) -> None:
         self.letter: str = letter
@@ -184,22 +185,17 @@ def attempt_soltuion(tiles: List[str]):
             print("All letters used up!")
             return board, []
 
-def checkTiles(candidateTiles: List[Tile], vertical=None) -> bool:
-    if not checkWord(candidateTiles):
-        return False
-    else:
-        # If orientation isn't specified (i.e. for checking the first word) then skip checking surrounding tiles
-        if vertical == None: return True
-        
-        d = enchant.Dict("en_UK")
-        # Check placement is correct wrt surrounding tiles i.e. that any auxiliary words formed (auxWord) are valid
-        for tile in candidateTiles:
-            ind = ["l", "r"] if vertical else ["u", "d"]
-            auxTiles = [fetchNeighbours(tile, ind[0]), tile, fetchNeighbours(tile, ind[1])]
-            auxWord = "".join([t.letter for t in auxTiles])
-            if not d.check(auxWord):
-                return False
-        return True
+def checkPlacement(candidateTiles: List[Tile], vertical) -> bool:
+    d = enchant.Dict("en_UK")
+    for tile in candidateTiles:
+        ind = ["l", "r"] if vertical else ["u", "d"]
+        auxTiles = fetchNeighbours(tile, ind[0]) + [tile] + fetchNeighbours(tile, ind[1])
+        auxWord = "".join([t.letter for t in auxTiles])
+        if len(auxWord) == 1:
+            continue
+        if not d.check(auxWord):
+            return False
+    return True
  
 def checkWord(candidateTiles: List[Tile]) -> bool:
     d = enchant.Dict("en_UK")
@@ -276,18 +272,96 @@ def chooseFirstWord(hand: List[Tile], board: List[Tile], maxWordLength: int = 5,
     # Modify the board passed in
     board += chosen_tiles
     
+    for tile in board:
+        tile.hand = False
+        
+    for tile in hand:
+        tile.hand = True
+    
     # Return the updated hand and board passed in
     return hand, board
 
 
-def nextWord(hand: List[Tile], board: List[Tile], maxWordLength: int = 10, numIterations: int = 1000) -> List[Tile]:
+def nextWord(hand: List[Tile], board: List[Tile], maxWordLength: int = 5, numIterations: int = 1000) -> List[Tile]:
+    d = enchant.Dict("en_UK")
     candidates: List[List[Tile]] = []
 
     for word_length in range(maxWordLength, 1, -1):
-        for _ in range(3): # numIterations):
+        for _ in range(numIterations):
              # choose one viable letter from the board and the rest from the hand
             candidateTiles = random.shuffle( random.sample(hand, word_length-1) + random.sample(board, 1) )
             print(candidateTiles)
+            
+            hand_sample = [(t.letter, hand.index(t), 'h') for t in random.sample(hand, word_length-1)]
+            board_sample = [(t.letter, board.index(t), 'b') for t in random.sample(board, 1)]
+            sample = hand_sample + board_sample
+            random.shuffle(sample)
+        
+            candidate_word = "".join(tup[0] for tup in sample)
+            candidate_indices = [tup[1] for tup in sample]
+            hand_or_board = [tup[2] for tup in sample]
+            print("Candidate word:", candidate_word)
+            
+            # Check the candidate is valid as a word
+            if not d.check(candidate_word): 
+                # print(f"Candidate word {''.join([t.letter for t in candidateTiles])} not viable")
+                continue
+            
+            candidate_tiles = [hand[candidate_indices[i]] if hand_or_board[i] == 'h' else board[candidate_indices[i]] for i in range(len(candidate_indices))]
+            
+            # Set vertical bool based on orientation of word containing letter from board
+            if board[board_sample[0][1]].nbs['l'] or board[board_sample[0][1]].nbs['r']:
+                if board[board_sample[0][1]].nbs['u'] or board[board_sample[0][1]].nbs['d']:
+                    continue
+                vertical = False
+            else:
+                vertical = True
+            
+            if not checkPlacement(candidate_tiles, vertical):
+                continue
+            
+            candidates.append(candidate_tiles)
+            
+        # Stop after at least one word has been found, as 
+        # this/these will be the longest word/s possible
+        if len(candidates) > 0:
+            break
+        
+    # If no candidates were found for any word length attempted, return an empty tile list and the initial set of tiles
+    if len(candidates) == 0:
+        print("No viable word found.")
+        return [], hand
+        
+    # Choose the set of candidate tiles with the highest Scrabble score to go forward
+    scores = [sum([t.score for t in ts]) for ts in candidates]  
+    chosen_tiles = candidates[scores.index(max(scores))]
+    
+    print(candidates)
+    print(scores)
+    print("Chosen word:", chosen_tiles, "with score =", max(scores))
+    
+    # Remove used tiles from list of remaining tiles
+    # remaining_tiles = copy.deepcopy(tiles)
+    for tile in chosen_tiles:
+        # Need to check if tile is in hand before removal since one of the tiles will be in board instead
+        if tile in hand:
+            hand.remove(tile)
+        
+    # Set the positions of the tiles
+    board_tile_ind: int = [i for i in range(len(chosen_tiles)) if chosen_tiles[i].hand == False][0]
+    board_tile = chosen_tiles[board_tile_ind]
+    for i in range(len(chosen_tiles)):
+        dist_from_board_tile = i - board_tile_ind
+        chosen_tiles[i].position = (board_tile.position[0], board_tile.position[1] + dist_from_board_tile) if vertical else (board_tile.position[0] + dist_from_board_tile, board_tile.position[1])
+    
+    # Set the neighbours of the tiles in the group
+    set_nbs(chosen_tiles, vertical)
+    
+    # Modify the board passed in
+    board += [t for t in chosen_tiles if t.hand == True]
+    
+    # Return the updated hand and board passed in
+    return hand, board
     
 def attempt_solution_new(hand: List[Tile]):
     pass
