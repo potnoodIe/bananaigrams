@@ -10,7 +10,7 @@ import utils
 
 class Tile:
     """Class to represent a tile, including letter and position.
-    nb_ attributes encode the connections between 
+    nbs encodes the connections between 
     different tiles, similar to a directed graph
     """
     
@@ -23,7 +23,7 @@ class Tile:
         self.x: int = x
         self.y: int = y
         self.position = (x, y)
-        self.score = utils.scores[self.letter]
+        self.score = utils.SCORES[self.letter]
         self.nbs = {"l": None, "r": None, "u": None, "d": None}
         
     def __str__(self) -> str:
@@ -77,30 +77,30 @@ class Game:
         pass
 
 def set_nbs(tiles: List[Tile], vertical: bool) -> None:
-        print(f"\nSetting nbs to tiles: {tiles}")
-        print(f"Vertical = {vertical}")
-        print(f"len(tiles) = {len(tiles)}")
+        #print(f"\nSetting nbs to tiles: {tiles}")
+        #print(f"Vertical = {vertical}")
+        #print(f"len(tiles) = {len(tiles)}")
         for i in range(len(tiles)-1):
-            print(f"i = {i}")
+            #print(f"i = {i}")
             if vertical:
-                print([f"{t.letter}, nbs: {t.nbs}" for t  in tiles])
-                print(f"Setting d nb of {tiles[i]} to {tiles[i+1]}")
+                #print([f"{t.letter}, nbs: {t.nbs}" for t  in tiles])
+                #print(f"Setting d nb of {tiles[i]} to {tiles[i+1]}")
                 tiles[i].set_nb("d", tiles[i+1])
-                print(f"Setting u nb of {tiles[i+1]} to {tiles[i]}")
+                #print(f"Setting u nb of {tiles[i+1]} to {tiles[i]}")
                 tiles[i+1].set_nb("u", tiles[i])
-                print([f"{t.letter}, nbs: {t.nbs}" for t  in tiles])
+                #print([f"{t.letter}, nbs: {t.nbs}" for t  in tiles])
             else:
                 # There's something fucky with mutable objects going on...
-                print([f"{t.letter}, nbs: {t.nbs}" for t  in tiles])
-                print(f"Setting r nb of {tiles[i]} to {tiles[i+1]}")
-                print(tiles)
+                #print([f"{t.letter}, nbs: {t.nbs}" for t  in tiles])
+                #print(f"Setting r nb of {tiles[i]} to {tiles[i+1]}")
+                #print(tiles)
                 tiles[i].set_nb("r", tiles[i+1])
-                print(tiles)
-                print([f"{t.letter}, nbs: {t.nbs}" for t  in tiles])
-                print(f"Setting l nb of {tiles[i+1]} to {tiles[i]}")
+                #print(tiles)
+                #print([f"{t.letter}, nbs: {t.nbs}" for t  in tiles])
+                #print(f"Setting l nb of {tiles[i+1]} to {tiles[i]}")
                 tiles[i+1].set_nb("l", tiles[i])
-                print([f"{t.letter}, nbs: {t.nbs}" for t  in tiles])
-        print([f"{t.letter}, nbs: {t.nbs}" for t  in tiles])
+                #print([f"{t.letter}, nbs: {t.nbs}" for t  in tiles])
+        #print([f"{t.letter}, nbs: {t.nbs}" for t  in tiles])
 
 # Deprecated
 def find_longest_valid_word(tiles: List[Tile], board: List[Tile], num_iterations: int) -> List[Tile]:
@@ -206,7 +206,7 @@ def attempt_soltuion(tiles: List[str]):
             print("All letters used up!")
             return board, []
 
-def checkPlacement(candidateTiles: List[Tile], board: List[Tile], vertical) -> bool:
+def checkPlacement(candidateTiles: List[Tile], board: List[Tile], vertical: bool) -> bool:
     d = enchant.Dict("en_UK")
     
     board_positions = [t.position for t in board]
@@ -215,24 +215,48 @@ def checkPlacement(candidateTiles: List[Tile], board: List[Tile], vertical) -> b
     
     ind = ['l', 'r'] if vertical else ['u', 'd']
     
+    print(f"Vertical in placement check: {vertical}")
+    
     for tile in candidateTiles:
-        if tile.nbs['l'] or tile.nbs['r']: continue
-        pos_lu = (tile.position[0], tile.position[1]-1) if vertical else (tile.position[0]-1, tile.position[1])
-        pos_rd = (tile.position[0], tile.position[1]+1) if vertical else (tile.position[0]+1, tile.position[1])
+        # if tile.nbs['l'] or tile.nbs['r']:
+        #     continue
         
-        if pos_lu in board_positions or pos_rd in board_positions:
-            tile_lu = [board[board_positions.index(pos_lu)]]
-            tile_lu_list = [tile_lu] if tile_lu is not None else []
-            tile_rd = [board[board_positions.index(pos_rd)]]
-            tile_rd_list = [tile_lu] if tile_rd is not None else []
-            auxTiles = fetchNeighbours(tile_lu, ind[0]) + tile_lu_list + [tile] + tile_rd_list + fetchNeighbours(tile_rd, ind[1])
+        # Neighbouring positions to the current tile
+        pos_prev = (tile.position[0], tile.position[1]-1) if vertical else (tile.position[0]-1, tile.position[1])
+        pos_next = (tile.position[0], tile.position[1]+1) if vertical else (tile.position[0]+1, tile.position[1])
+        
+        print(f"Tile: {tile}")
+        print(f"position: {tile.position}")
+        print(f"prev pos: {pos_prev}, next pos: {pos_next}")
+        
+        print("pos_prev in board_positions:", pos_prev in board_positions)
+        print("pos_next in board_positions:", pos_next in board_positions)
+        
+        if pos_prev in board_positions:
+            tile_prev = board[board_positions.index(pos_prev)]
+            tile_prev_list = [tile_prev] if tile_prev is not None else []
+            aux_tiles_prev = fetchNeighbours(tile_prev, ind[0])
+            prev_tiles = aux_tiles_prev + tile_prev_list
+        else:
+            tile_prev = None
+            prev_tiles = []
+        if pos_next in board_positions:
+            tile_next = board[board_positions.index(pos_next)]
+            tile_next_list = [tile_next] if tile_next is not None else []
+            aux_tiles_next= fetchNeighbours(tile_next, ind[1])
+            next_tiles = tile_next_list + aux_tiles_next
+        else:
+            tile_next = None
+            next_tiles = []
+            
+        auxTiles = prev_tiles + [tile] + next_tiles
         auxWord = "".join([t.letter for t in auxTiles])
         if len(auxWord) == 1:
             continue
         if not d.check(auxWord):
             return False
         
-        potential_nbs[tile] = [tile_lu, tile_rd]
+        potential_nbs[tile] = [tile_prev, tile_next]
         
     for tile, nbs in potential_nbs.items():
         if nbs[0]:
@@ -254,7 +278,6 @@ def fetchNeighbours(tile: Tile, direction: str) -> List[Tile]:
     if tile.nb(direction) is None:
         return []
     else:
-        print(tile.nbs)
         nb_list = [tile.nb(direction)] if tile.nb(direction) is not None else []
         return nb_list + fetchNeighbours(tile.nb(direction), direction)
 
@@ -268,7 +291,7 @@ def chooseFirstWord(hand: List[Tile], board: List[Tile], maxWordLength: int = 5,
             sample = [(t.letter, hand.index(t)) for t in random.sample(hand, word_length)]
             candidate_word = "".join(tup[0] for tup in sample)
             candidate_indices = [tup[1] for tup in sample]
-            print("Candidate letters:", candidate_word)
+            #print("Candidate letters:", candidate_word)
             
             # Check the candidate is valid as a word
             if not d.check(candidate_word): 
@@ -301,7 +324,7 @@ def chooseFirstWord(hand: List[Tile], board: List[Tile], maxWordLength: int = 5,
 
     # Set the orientation of the group of tiles (randomly, for now)
     vertical: bool = random.choice([True, False])
-    print("Vertical: ", vertical)
+    print("Vertical (first word): ", vertical)
     
     # Remove used tiles from list of remaining tiles
     # remaining_tiles = copy.deepcopy(tiles)
@@ -312,10 +335,10 @@ def chooseFirstWord(hand: List[Tile], board: List[Tile], maxWordLength: int = 5,
     for i in range(len(chosen_tiles)):
         chosen_tiles[i].position = (0,-i) if vertical else (i,0)
     
-    print([f"{t.letter}, nbs: {t.nbs}" for t  in chosen_tiles])
+    print("\n".join([f"{t.letter}, nbs: {t.nbs}" for t  in chosen_tiles]))
     # Set the neighbours of the tiles in the group
     set_nbs(chosen_tiles, vertical)
-    print([f"{t.letter}, nbs: {t.nbs}" for t  in chosen_tiles])
+    print("\n".join([f"{t.letter}, nbs: {t.nbs}" for t  in chosen_tiles]))
     
     # Modify the board passed in
     board += chosen_tiles
@@ -344,33 +367,45 @@ def nextWord(hand: List[Tile], board: List[Tile], maxWordLength: int = 5, numIte
             board_sample = [(t.letter, board.index(t), 'b') for t in random.sample(board, 1)]
             sample = hand_sample + board_sample
             random.shuffle(sample)
-            print(f"\nHand sample: {hand_sample}\nboard sample: {board_sample} with nbs {[board[t[1]].nbs for t in board_sample]}")
+            #print(f"\nHand sample: {hand_sample}\nboard sample: {board_sample} with nbs {[board[t[1]].nbs for t in board_sample]}")
         
             candidate_word = "".join(tup[0] for tup in sample)
             candidate_indices = [tup[1] for tup in sample]
             hand_or_board = [tup[2] for tup in sample]
-            print("Candidate word:", candidate_word)
+            if candidate_word == "tune":
+                print("Candidate word:", candidate_word)
             
             # Check the candidate is valid as a word
             if not d.check(candidate_word): 
                 # print(f"Candidate word {''.join([t.letter for t in candidateTiles])} not viable")
-                print("Failed dictionary test")
+                # print("Failed dictionary test")
                 continue
             
             candidate_tiles = [hand[candidate_indices[i]] if hand_or_board[i] == 'h' else board[candidate_indices[i]] for i in range(len(candidate_indices))]
             
+            print("\n".join([f"{t.letter}: {t.nbs}" for t in candidate_tiles]))
+            
             # Set vertical bool based on orientation of word containing letter from board
             if board[board_sample[0][1]].nbs['l'] or board[board_sample[0][1]].nbs['r']:
                 if board[board_sample[0][1]].nbs['u'] or board[board_sample[0][1]].nbs['d']:
-                    print("Both u, d and l, r neighbours")
+                    print("Can't place candidate word because board letter is used both vertically and horizontally already")
                     continue
                 vertical = True
             else:
                 vertical = False
+        
+            # Set the positions of the tiles temporarily to check placement
+            board_tile_ind: int = [i for i in range(len(candidate_tiles)) if candidate_tiles[i].hand == False][0]
+            board_tile = candidate_tiles[board_tile_ind]
+            for i in range(len(candidate_tiles)):
+                dist_from_board_tile = i - board_tile_ind
+                candidate_tiles[i].position = (board_tile.position[0], board_tile.position[1] - dist_from_board_tile) if vertical else (board_tile.position[0] + dist_from_board_tile, board_tile.position[1])
             
+            print(f"Vertical before placement check: {vertical}")
             if not checkPlacement(candidate_tiles, board, vertical):
-                print("Failed placement test")
+                print("Failed placement test\n")
                 continue
+            print("Passed placement test")
             
             candidates.append(candidate_tiles)
             
@@ -388,9 +423,22 @@ def nextWord(hand: List[Tile], board: List[Tile], maxWordLength: int = 5, numIte
     scores = [sum([t.score for t in ts]) for ts in candidates]  
     chosen_tiles = candidates[scores.index(max(scores))]
     
-    print(candidates)
-    print(scores)
+    # Make sure the positions of the tiles are set to those of the chosen word, rather than the last word found
+    board_tile_ind: int = [i for i in range(len(chosen_tiles)) if chosen_tiles[i].hand == False][0]
+    board_tile = chosen_tiles[board_tile_ind]
+    print(f"Vertical after placement check : {vertical}")
+    print(f"Board tile position: ({board_tile.position[0], board_tile.position[1]}")
+    for i in range(len(chosen_tiles)):
+        dist_from_board_tile = i - board_tile_ind
+        print(f"i={i}")
+        print(f"Distance: {dist_from_board_tile}")
+        chosen_tiles[i].position = (board_tile.position[0], board_tile.position[1] - dist_from_board_tile) if vertical else (board_tile.position[0] + dist_from_board_tile, board_tile.position[1])
+    
+    print(f"---------------\nCandidates: {candidates}")
+    print(f"with scores: {scores}")
     print("Chosen word:", chosen_tiles, "with score =", max(scores))
+    
+    print([t.position for t in chosen_tiles])
     
     # Remove used tiles from list of remaining tiles
     # remaining_tiles = copy.deepcopy(tiles)
@@ -398,19 +446,16 @@ def nextWord(hand: List[Tile], board: List[Tile], maxWordLength: int = 5, numIte
         # Need to check if tile is in hand before removal since one of the tiles will be in board instead
         if tile in hand:
             hand.remove(tile)
-        
-    # Set the positions of the tiles
-    board_tile_ind: int = [i for i in range(len(chosen_tiles)) if chosen_tiles[i].hand == False][0]
-    board_tile = chosen_tiles[board_tile_ind]
-    for i in range(len(chosen_tiles)):
-        dist_from_board_tile = i - board_tile_ind
-        chosen_tiles[i].position = (board_tile.position[0], board_tile.position[1] - dist_from_board_tile) if vertical else (board_tile.position[0] + dist_from_board_tile, board_tile.position[1])
     
     # Set the neighbours of the tiles in the group
     set_nbs(chosen_tiles, vertical)
     
-    # Modify the board passed in
+    # Modify the board
     board += [t for t in chosen_tiles if t.hand == True]
+    
+    # Update hand attribute to show that chosen tiles are on the board
+    for tile in chosen_tiles:
+        tile.hand = False
     
     # Return the updated hand and board passed in
     return hand, board

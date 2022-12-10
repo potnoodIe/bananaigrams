@@ -2,7 +2,7 @@ import random
 from typing import List
 from solver import Tile
     
-all_tiles = ( ["a"] * 13
+ALL_TILES = ( ["a"] * 13
             + ["b"] * 3
             + ["c"] * 3
             + ["d"] * 6
@@ -30,7 +30,7 @@ all_tiles = ( ["a"] * 13
             + ["z"] * 2
 )
 
-scores ={"a": 1,
+SCORES ={"a": 1,
          "b": 3,
          "c": 3,
          "d": 2,
@@ -59,7 +59,7 @@ scores ={"a": 1,
 }
     
 def chooseLetters(n):
-    tiles = random.sample(all_tiles, n)
+    tiles = random.sample(ALL_TILES, n)
     return tiles
 
 def displayTiles(tiles: List[Tile]) -> None:
@@ -72,11 +72,19 @@ def displayTiles(tiles: List[Tile]) -> None:
     """
     positions = [t.position for t in tiles]
     letters = [t.letter for t in tiles]
+    print("-------------------")
+    print(letters)
+    print(positions)
     
     x_min = min(list(zip(*positions))[0])
     x_max = max(list(zip(*positions))[0])
     y_min = min(list(zip(*positions))[1])
     y_max = max(list(zip(*positions))[1])
+    
+    print(f"x_min: {x_min}")
+    print(f"x_max: {x_max}")
+    print(f"y_min: {y_min}")
+    print(f"y_max: {y_max}")
     
     # Print the tiles
     print("".join(["_"]*(2*(x_max-(x_min-1))+3)))
