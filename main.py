@@ -15,11 +15,13 @@ if __name__ == "__main__":
     print(player1)
     utils.displayTiles(player1.board)
     
-    for _ in range(3):
+    while len(player1.hand) > 0:
         solver.nextWord(player1.hand, player1.board)
         print(player1)
         utils.displayTiles(player1.board)
+        
+        print(f"Tiles left in hand: {len(player1.hand)}\n")
     
-    # Test tile display util fn
-    # tiles = randomPlaceTiles(chooseLetters(21))
-    # displayTiles(tiles)
+    # # Test tile display util fn
+    # tiles = utils.randomPlaceTiles(utils.chooseLetters(21))
+    # utils.displayConnectivity(tiles)

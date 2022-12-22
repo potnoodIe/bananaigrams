@@ -99,6 +99,40 @@ def displayTiles(tiles: List[Tile]) -> None:
         print("|")
         
     print("|" + "".join(["_"]*(2*(x_max-(x_min-1))+1)) + "|")
+    
+def displayConnectivity(tiles: List[Tile]) -> None:
+    """Function to print tiles as an ascii grid, showing both their positions and connections with neighbouring tiles.
+    Edges of the board automatically resize based on max width and height
+
+    Args:
+        tiles (List[Tile]): list of tiles as Tile objects containing information about letter and also position
+    """
+    positions = [t.position for t in tiles]
+    letters = [t.letter for t in tiles]
+    print("-------------------")
+    print(letters)
+    print(positions)
+    
+    x_min = min(list(zip(*positions))[0])
+    x_max = max(list(zip(*positions))[0])
+    y_min = min(list(zip(*positions))[1])
+    y_max = max(list(zip(*positions))[1])
+    
+    # Print the tiles
+    # print(" ".join([str(i) for i in range(2*(x_max-(x_min-1))+3)]))
+    print("  ","".join(["_"]*(2*(x_max-(x_min-1))+3)))
+    
+    for y in range(y_max, y_min-1, -1):
+        print(f"{y} " if y<10 else y,"| ", end="")
+        for x in range(x_min, x_max+1):
+            if (x,y) in positions:
+                tile = tiles[positions.index((x,y))]
+                print(tile, end=" ")
+            else:
+                print("  ", end="")
+        print("|")
+        
+    print("   |" + "".join(["_"]*(2*(x_max-(x_min-1))+1)) + "|")
 
 def randomPlaceTiles(letters: List[str]) -> List[Tile]:
     """Function to generate tiles with random positions for testing. 
